@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=70.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a1111_lora_selector"
+version = "0.0.1"
+description = "A interactive GUI blora selector based on A1111"
+authors = [
+  {name = "Ralkey", email = "ralkey@outlook.com"}
+]
+readme = "README.md"
+license = {text = "MIT license"}
+requires-python = ">=3.10"
+classifiers = []
+dependencies = [
+
+]
+
+
+
+[project.optional-dependencies]
+dev = [
+    "bump-my-version",
+    "coverage",  # testing
+    "mypy",  # linting
+    "pre-commit", # runs linting on commit
+    "pytest",  # testing
+    "ruff",  # linting
+]
+
+[project.urls]
+Repository = "https://github.com/RalkeyOfficial/a1111_lora_selector"
+BugTracker = "https://github.com/RalkeyOfficial/a1111_lora_selector/issues"
+Documentation = "https://github.com/RalkeyOfficial/a1111_lora_selector/wiki"
+
+
+[tool.comfy]
+PublisherId = "RalkeyOfficial"
+DisplayName = "A1111-lora-selector"
+Icon = ""
+Tags = []
+Repository = "https://github.com/RalkeyOfficial/a1111_lora_selector"
+includes = ["dist/"]
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+files = "."
+
+# Use strict defaults
+strict = true
+warn_unreachable = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+# Don't require test functions to include types
+module = "tests.*"
+allow_untyped_defs = true
+disable_error_code = "attr-defined"
+
+[tool.ruff]
+# extend-exclude = ["static", "ci/templates"]
+line-length = 140
+src = ["src", "tests"]
+target-version = "py39"
+
+# Add rules to ban exec/eval
+[tool.ruff.lint]
+select = [
+    "S102",  # exec-builtin
+    "S307",  # eval-used
+    "W293",
+    "F",  # The "F" series in Ruff stands for "Pyflakes" rules, which catch various Python syntax errors and undefined names.
+    # See all rules here: https://docs.astral.sh/ruff/rules/#pyflakes-f
+]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
