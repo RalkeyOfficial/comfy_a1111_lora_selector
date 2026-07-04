@@ -3,7 +3,9 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
-  useState
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent
 } from 'react'
 
 // Provided by ComfyUI at runtime; externalized by vite.
@@ -94,14 +96,15 @@ function htmlToText(html: string): string {
     .trim()
 }
 
-function Thumb({ name }: { name: string }) {
+function Thumb({ name, small }: { name: string; small?: boolean }) {
   const [failed, setFailed] = useState(false)
+  const cls = small ? 'als-thumb als-thumb-sm' : 'als-thumb'
   if (failed) {
-    return <div className="als-thumb">{baseName(name).slice(0, 2).toUpperCase()}</div>
+    return <div className={cls}>{baseName(name).slice(0, 2).toUpperCase()}</div>
   }
   return (
     <img
-      className="als-thumb als-thumb-img"
+      className={cls + ' als-thumb-img'}
       src={previewUrl(name, 0)}
       loading="lazy"
       alt=""
@@ -204,6 +207,10 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
     const [activeDir, setActiveDir] = useState('')
     const [filter, setFilter] = useState('')
     const [detail, setDetail] = useState<string | null>(null)
+    const [listHeight, setListHeight] = useState(150)
+    const [gridHidden, setGridHidden] = useState(false)
+    const drag = useRef<{ startY: number; startH: number } | null>(null)
+    const bodyRef = useRef<HTMLDivElement>(null)
 
     useImperativeHandle(ref, () => ({ load: setSelection }), [])
 
@@ -259,6 +266,35 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
     const patch = (name: string, changes: Partial<SelectionItem>) =>
       commit(selection.map((item) => (item.name === name ? { ...item, ...changes } : item)))
 
+    const remove = (name: string) => commit(selection.filter((item) => item.name !== name))
+
+    const enabled = selection.filter((item) => item.on)
+
+    const onHandleDown = (e: ReactPointerEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      drag.current = { startY: e.clientY, startH: listHeight }
+    }
+    const onHandleMove = (e: ReactPointerEvent) => {
+      if (!drag.current) return
+      const body = bodyRef.current
+      // Keep the list within the master (body) area so it can't grow up past
+      // the grid into the filters. The list occupies at most everything but
+      // the handle; the grid takes whatever is left.
+      const maxList = body ? Math.max(0, body.clientHeight - 14) : 600
+      let next = Math.min(Math.max(drag.current.startH + (drag.current.startY - e.clientY), 0), maxList)
+      if (next <= 60) next = 0
+      else if (next >= maxList - 60) next = maxList
+      setListHeight(next)
+      // Fully open: drop the grid entirely so no sliver/scrollbar peeks through.
+      setGridHidden(next === maxList)
+    }
+    const onHandleUp = (e: ReactPointerEvent) => {
+      drag.current = null
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
+
     return (
       <div className="als-root">
         <div className="als-toolbar">
@@ -289,6 +325,8 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
           ))}
         </div>
 
+        <div className="als-body" ref={bodyRef}>
+        {!gridHidden && (
         <div className="als-grid">
           {visible.length === 0 && <div className="als-empty">No loras found</div>}
           {visible.map((name) => {
@@ -335,6 +373,45 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
               </div>
             )
           })}
+        </div>
+        )}
+
+        <div className="als-list-section">
+          <div
+            className="als-handle"
+            title="Drag to resize"
+            onPointerDown={onHandleDown}
+            onPointerMove={onHandleMove}
+            onPointerUp={onHandleUp}
+          />
+          <div className="als-list" style={{ height: listHeight }}>
+            {enabled.length === 0 && <div className="als-empty">No enabled loras</div>}
+            {enabled.map((item) => (
+              <div key={item.name} className="als-list-row">
+                <Thumb name={item.name} small />
+                <span className="als-list-name" title={item.name}>
+                  {baseName(item.name)}
+                </span>
+                <input
+                  className="als-strength"
+                  type="number"
+                  step={0.05}
+                  min={-10}
+                  max={10}
+                  value={item.strength}
+                  onChange={(e) => patch(item.name, { strength: Number(e.target.value) })}
+                />
+                <button
+                  className="als-remove"
+                  title="Remove"
+                  onClick={() => remove(item.name)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
         </div>
 
         {detail && <DetailOverlay name={detail} onClose={() => setDetail(null)} />}
