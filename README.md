@@ -1,4 +1,4 @@
-# A1111 Lora Selector
+# Comfy A1111 Lora Selector
 
 An A1111-style lora browser node for ComfyUI. Scroll and filter your loras in a
 card grid, click to select, tweak strengths, and read/edit each lora's details —
@@ -37,8 +37,8 @@ both model and clip.
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/RalkeyOfficial/a1111_lora_selector.git
-cd a1111_lora_selector/ui
+git clone https://github.com/RalkeyOfficial/comfy_a1111_lora_selector.git
+cd comfy_a1111_lora_selector/ui
 npm install
 npm run build
 # restart ComfyUI
@@ -64,10 +64,10 @@ extension module.
 - `lora_selector_node.py` — the node. Reads a hidden JSON `selection` widget
   that the frontend drives and turns it into a `LORA_STACK`.
 - `__init__.py` — registers the node and its API routes:
-  - `GET /a1111_lora_selector/loras` — the lora list
-  - `GET /a1111_lora_selector/info?name=` — normalized metadata
-  - `GET /a1111_lora_selector/preview?name=&i=` — a preview image
-  - `POST /a1111_lora_selector/info` — save recommended weight / note to the
+  - `GET /comfy_a1111_lora_selector/loras` — the lora list
+  - `GET /comfy_a1111_lora_selector/info?name=` — normalized metadata
+  - `GET /comfy_a1111_lora_selector/preview?name=&i=` — a preview image
+  - `POST /comfy_a1111_lora_selector/info` — save recommended weight / note to the
     A1111 `NAME.json` sidecar
 - `ui/src/main.tsx` — mounts the React UI as a DOM widget on the node.
 - `ui/src/LoraSelector.tsx` — the grid, filters, enabled list and detail modal.
@@ -75,7 +75,7 @@ extension module.
 ## Project layout
 
 ```
-a1111_lora_selector/
+comfy_a1111_lora_selector/
 ├── __init__.py             # node + API routes, serves dist/
 ├── lora_selector_node.py   # A1111LoraSelector node
 ├── pyproject.toml

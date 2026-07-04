@@ -97,12 +97,12 @@ def _read_info(base):
     return info
 
 
-@server.PromptServer.instance.routes.get("/a1111_lora_selector/loras")
+@server.PromptServer.instance.routes.get("/comfy_a1111_lora_selector/loras")
 async def get_loras(request):
     return web.json_response(folder_paths.get_filename_list("loras"))
 
 
-@server.PromptServer.instance.routes.get("/a1111_lora_selector/info")
+@server.PromptServer.instance.routes.get("/comfy_a1111_lora_selector/info")
 async def get_info(request):
     name = request.query.get("name", "")
     base = _base_path(name)
@@ -114,7 +114,7 @@ async def get_info(request):
     return web.json_response(info)
 
 
-@server.PromptServer.instance.routes.post("/a1111_lora_selector/info")
+@server.PromptServer.instance.routes.post("/comfy_a1111_lora_selector/info")
 async def save_info(request):
     data = await request.json()
     base = _base_path(data.get("name", ""))
@@ -132,7 +132,7 @@ async def save_info(request):
     return web.json_response({"ok": True})
 
 
-@server.PromptServer.instance.routes.get("/a1111_lora_selector/preview")
+@server.PromptServer.instance.routes.get("/comfy_a1111_lora_selector/preview")
 async def get_preview(request):
     name = request.query.get("name", "")
     base = _base_path(name)
@@ -162,4 +162,4 @@ if os.path.exists(dist_path):
         pass
     nodes.EXTENSION_WEB_DIRS[project_name] = dist_path
 else:
-    print("A1111 Lora Selector: dist/ not found, run `npm run build` in ui/")
+    print("Comfy A1111 Lora Selector: dist/ not found, run `npm run build` in ui/")

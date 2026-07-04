@@ -77,7 +77,7 @@ function ancestorDirs(names: string[]): string[] {
 
 function previewUrl(name: string, index: number): string {
   return api.apiURL(
-    `/a1111_lora_selector/preview?name=${encodeURIComponent(name)}&i=${index}`
+    `/comfy_a1111_lora_selector/preview?name=${encodeURIComponent(name)}&i=${index}`
   )
 }
 
@@ -122,7 +122,7 @@ function DetailOverlay({ name, onClose }: { name: string; onClose: () => void })
   useEffect(() => {
     let cancelled = false
     api
-      .fetchApi(`/a1111_lora_selector/info?name=${encodeURIComponent(name)}`)
+      .fetchApi(`/comfy_a1111_lora_selector/info?name=${encodeURIComponent(name)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: LoraInfo | null) => {
         if (cancelled || !data) return
@@ -139,7 +139,7 @@ function DetailOverlay({ name, onClose }: { name: string; onClose: () => void })
   const save = (preferredWeight: number, notes: string) => {
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      void api.fetchApi('/a1111_lora_selector/info', {
+      void api.fetchApi('/comfy_a1111_lora_selector/info', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, preferredWeight, notes })
@@ -281,7 +281,7 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
     useEffect(() => {
       let cancelled = false
       api
-        .fetchApi('/a1111_lora_selector/loras', { cache: 'no-store' })
+        .fetchApi('/comfy_a1111_lora_selector/loras', { cache: 'no-store' })
         .then((res) => res.json())
         .then((data: string[]) => {
           if (!cancelled && Array.isArray(data)) setLoras(data)

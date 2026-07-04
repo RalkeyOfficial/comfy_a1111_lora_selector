@@ -3,9 +3,9 @@ requires = ["setuptools>=70.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "a1111_lora_selector"
+name = "comfy_a1111_lora_selector"
 version = "0.0.1"
-description = "A interactive GUI blora selector based on A1111"
+description = "An interactive A1111-style lora selector node for ComfyUI"
 authors = [
   {name = "Ralkey", email = "ralkey@outlook.com"}
 ]
@@ -30,17 +30,17 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/RalkeyOfficial/a1111_lora_selector"
-BugTracker = "https://github.com/RalkeyOfficial/a1111_lora_selector/issues"
-Documentation = "https://github.com/RalkeyOfficial/a1111_lora_selector/wiki"
+Repository = "https://github.com/RalkeyOfficial/comfy_a1111_lora_selector"
+BugTracker = "https://github.com/RalkeyOfficial/comfy_a1111_lora_selector/issues"
+Documentation = "https://github.com/RalkeyOfficial/comfy_a1111_lora_selector/wiki"
 
 
 [tool.comfy]
 PublisherId = "RalkeyOfficial"
-DisplayName = "A1111-lora-selector"
+DisplayName = "Comfy A1111 Lora Selector"
 Icon = ""
 Tags = []
-Repository = "https://github.com/RalkeyOfficial/a1111_lora_selector"
+Repository = "https://github.com/RalkeyOfficial/comfy_a1111_lora_selector"
 includes = ["dist/"]
 
 [tool.setuptools.package-data]
