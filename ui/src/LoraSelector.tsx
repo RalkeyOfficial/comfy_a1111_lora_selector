@@ -115,6 +115,9 @@ function Thumb({ name, small }: { name: string; small?: boolean }) {
 
 function DetailOverlay({ name, onClose }: { name: string; onClose: () => void }) {
   const [info, setInfo] = useState<LoraInfo | null>(null)
+  const [weight, setWeight] = useState(1)
+  const [note, setNote] = useState('')
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     let cancelled = false
@@ -122,13 +125,27 @@ function DetailOverlay({ name, onClose }: { name: string; onClose: () => void })
       .fetchApi(`/a1111_lora_selector/info?name=${encodeURIComponent(name)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: LoraInfo | null) => {
-        if (!cancelled) setInfo(data)
+        if (cancelled || !data) return
+        setInfo(data)
+        setWeight(data.preferredWeight == null ? 1 : data.preferredWeight)
+        setNote(data.notes)
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
   }, [name])
+
+  const save = (preferredWeight: number, notes: string) => {
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      void api.fetchApi('/a1111_lora_selector/info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, preferredWeight, notes })
+      })
+    }, 400)
+  }
 
   const description =
     info && info.description
@@ -143,57 +160,99 @@ function DetailOverlay({ name, onClose }: { name: string; onClose: () => void })
         <button className="als-close" onClick={onClose}>
           ×
         </button>
-        <h3>{info?.modelName || baseName(name)}</h3>
-        <div className="als-path">{name}</div>
+
+        <header className="als-dsec">
+          <h3>{info?.modelName || baseName(name)}</h3>
+          <div className="als-path">{name}</div>
+          <div className="als-dmeta">
+            {info?.baseModel && <span className="als-badge">{info.baseModel}</span>}
+            {info?.creator && <span className="als-muted">by {info.creator}</span>}
+          </div>
+        </header>
 
         {info && info.previewCount > 0 && (
-          <div className="als-gallery">
-            {Array.from({ length: info.previewCount }, (_, i) => (
-              <img key={i} src={previewUrl(name, i)} loading="lazy" alt="" />
-            ))}
-          </div>
+          <section className="als-dsec">
+            <div className="als-gallery">
+              {Array.from({ length: info.previewCount }, (_, i) => (
+                <img key={i} src={previewUrl(name, i)} loading="lazy" alt="" />
+              ))}
+            </div>
+          </section>
         )}
 
-        {info?.baseModel && <span className="als-badge">{info.baseModel}</span>}
-        {info?.creator && <span className="als-muted"> by {info.creator}</span>}
+        <section className="als-dsec">
+          <h4>Recommended weight</h4>
+          <div className="als-weight">
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.05}
+              value={weight}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                setWeight(v)
+                save(v, note)
+              }}
+            />
+            <span className="als-weight-val">{weight.toFixed(2)}</span>
+          </div>
+        </section>
 
         {info?.activationText && (
-          <div className="als-field">
-            <b>Trigger words</b>
+          <section className="als-dsec">
+            <h4>
+              Trigger words
+              <button
+                className="als-copy"
+                title="Copy"
+                onClick={() => void navigator.clipboard?.writeText(info.activationText)}
+              >
+                copy
+              </button>
+            </h4>
             <div className="als-mono">{info.activationText}</div>
-          </div>
+          </section>
         )}
-        {!!info?.preferredWeight && (
-          <div className="als-field">
-            <b>Preferred weight</b> {info.preferredWeight}
-          </div>
-        )}
+
         {description && (
-          <div className="als-field">
-            <b>Description</b>
+          <section className="als-dsec">
+            <h4>Description</h4>
             <div className="als-desc">{description}</div>
-          </div>
+          </section>
         )}
+
         {info?.negativeText && (
-          <div className="als-field">
-            <b>Negative</b>
+          <section className="als-dsec">
+            <h4>Negative</h4>
             <div className="als-mono">{info.negativeText}</div>
-          </div>
+          </section>
         )}
-        {info?.notes && (
-          <div className="als-field">
-            <b>Notes</b>
-            <div className="als-desc">{info.notes}</div>
-          </div>
-        )}
+
+        <section className="als-dsec">
+          <h4>Personal note</h4>
+          <textarea
+            className="als-note"
+            placeholder="Your notes about this lora…"
+            value={note}
+            onChange={(e) => {
+              setNote(e.target.value)
+              save(weight, e.target.value)
+            }}
+          />
+        </section>
+
         {info && info.tags.length > 0 && (
-          <div className="als-tags">
-            {info.tags.map((tag) => (
-              <span key={tag} className="als-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
+          <section className="als-dsec">
+            <h4>Tags</h4>
+            <div className="als-tags">
+              {info.tags.map((tag) => (
+                <span key={tag} className="als-tag">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>

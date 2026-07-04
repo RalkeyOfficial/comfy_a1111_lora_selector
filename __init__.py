@@ -44,8 +44,17 @@ def _preview_files(base):
     return files
 
 
+def _load_json(path):
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def _read_info(base):
-    """Normalize A1111 (NAME.json) or ComfyUI-downloader (NAME.cminfo.json) metadata."""
+    """Normalize metadata. Rich display data comes from the ComfyUI-downloader
+    (NAME.cminfo.json) or A1111 (NAME.json) file; the user-editable preferred
+    weight and notes always come from the A1111 file, which we own for edits."""
     info = {
         "format": None,
         "description": "",
@@ -61,30 +70,29 @@ def _read_info(base):
         "creator": None,
     }
 
-    a1111 = base + ".json"
-    cminfo = base + ".cminfo.json"
-    if os.path.exists(a1111):
-        with open(a1111, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        info["format"] = "a1111"
-        info["description"] = data.get("description") or ""
-        info["activationText"] = data.get("activation text") or ""
-        info["baseModel"] = data.get("sd version") or None
-        info["negativeText"] = data.get("negative text") or ""
-        info["preferredWeight"] = data.get("preferred weight")
-        info["notes"] = data.get("notes") or ""
-    elif os.path.exists(cminfo):
-        with open(cminfo, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    data_a = _load_json(base + ".json")
+    data_c = _load_json(base + ".cminfo.json")
+
+    if data_c is not None:
         info["format"] = "comfy-downloader"
-        info["description"] = data.get("ModelDescription") or ""
+        info["description"] = data_c.get("ModelDescription") or ""
         info["descriptionHtml"] = True
-        info["baseModel"] = data.get("BaseModel") or None
-        info["trainedWords"] = data.get("TrainedWords") or []
+        info["baseModel"] = data_c.get("BaseModel") or None
+        info["trainedWords"] = data_c.get("TrainedWords") or []
         info["activationText"] = ", ".join(info["trainedWords"])
-        info["tags"] = data.get("Tags") or []
-        info["modelName"] = data.get("ModelName") or None
-        info["creator"] = data.get("CreatorUsername") or None
+        info["tags"] = data_c.get("Tags") or []
+        info["modelName"] = data_c.get("ModelName") or None
+        info["creator"] = data_c.get("CreatorUsername") or None
+    elif data_a is not None:
+        info["format"] = "a1111"
+        info["description"] = data_a.get("description") or ""
+        info["activationText"] = data_a.get("activation text") or ""
+        info["baseModel"] = data_a.get("sd version") or None
+        info["negativeText"] = data_a.get("negative text") or ""
+
+    if data_a is not None:
+        info["preferredWeight"] = data_a.get("preferred weight")
+        info["notes"] = data_a.get("notes") or ""
 
     return info
 
@@ -104,6 +112,24 @@ async def get_info(request):
     info["name"] = name
     info["previewCount"] = len(_preview_files(base))
     return web.json_response(info)
+
+
+@server.PromptServer.instance.routes.post("/a1111_lora_selector/info")
+async def save_info(request):
+    data = await request.json()
+    base = _base_path(data.get("name", ""))
+    if base is None:
+        return web.json_response({"error": "not found"}, status=404)
+    # Store editable fields in the A1111 sidecar, keeping any existing keys.
+    path = base + ".json"
+    existing = _load_json(path) or {}
+    if "preferredWeight" in data:
+        existing["preferred weight"] = data["preferredWeight"]
+    if "notes" in data:
+        existing["notes"] = data["notes"]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(existing, f, indent=4, ensure_ascii=False)
+    return web.json_response({"ok": True})
 
 
 @server.PromptServer.instance.routes.get("/a1111_lora_selector/preview")
