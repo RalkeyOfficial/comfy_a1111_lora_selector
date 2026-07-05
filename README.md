@@ -20,6 +20,12 @@ then feed the result into any node that takes a `LORA_STACK`.
   - **A1111**: `NAME.json` + `NAME.png` / `NAME_0.png`, `NAME_1.png`, …
   - **ComfyUI downloader**: `NAME.cminfo.json` + `NAME.preview.jpeg`
 
+  Display fields (description, base model, trigger words, tags) come from the
+  `.cminfo.json` when present, otherwise the `.json`. The editable **recommended
+  weight** and **note** always live in the A1111 `NAME.json`, which this
+  extension owns for edits — so editing them for a downloader lora creates a
+  `NAME.json` alongside the existing `NAME.cminfo.json`.
+
 ## The node
 
 **A1111 Lora Selector** (category *loaders*)

@@ -263,6 +263,9 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
   ({ getSelection, onChange }, ref) => {
     const [loras, setLoras] = useState<string[]>([])
     const [selection, setSelection] = useState<Selection>(getSelection)
+    // Latest selection for async callbacks (the preferred-weight fetch below).
+    const selectionRef = useRef(selection)
+    selectionRef.current = selection
     const [activeDir, setActiveDir] = useState('')
     const [filter, setFilter] = useState('')
     const [detail, setDetail] = useState<string | null>(null)
@@ -317,9 +320,25 @@ const LoraSelector = forwardRef<SelectorHandle, LoraSelectorProps>(
     const toggle = (name: string) => {
       if (selectedByName.has(name)) {
         commit(selection.filter((item) => item.name !== name))
-      } else {
-        commit([...selection, { name, strength: 1, on: true }])
+        return
       }
+      commit([...selection, { name, strength: 1, on: true }])
+      // On enable, adopt the lora's recommended weight if it has one other than
+      // the 1.0 default. This fires only here; later strength edits are kept.
+      api
+        .fetchApi(`/comfy_a1111_lora_selector/info?name=${encodeURIComponent(name)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((info: LoraInfo | null) => {
+          const weight = info?.preferredWeight
+          if (weight == null || weight === 1) return
+          if (!selectionRef.current.some((item) => item.name === name)) return
+          commit(
+            selectionRef.current.map((item) =>
+              item.name === name ? { ...item, strength: weight } : item
+            )
+          )
+        })
+        .catch(() => {})
     }
 
     const patch = (name: string, changes: Partial<SelectionItem>) =>
